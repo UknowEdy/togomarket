@@ -1,0 +1,22 @@
+{
+  "name": "TogoMarket - Petites Annonces",
+  "short_name": "TogoMarket",
+  "description": "La plateforme de petites annonces n°1 au Togo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#228B22",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
