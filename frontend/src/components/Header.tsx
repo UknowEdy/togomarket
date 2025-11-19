@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Search, PlusCircle, User, LogOut, Heart, MessageSquare } from 'lucide-react';
+import { PlusCircle, User, LogOut, Heart, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from './Button';
+import { SearchBar } from './SearchBar';
 
 export const Header = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -26,16 +27,7 @@ export const Header = () => {
           </Link>
 
           {/* Barre de recherche (desktop) */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher une annonce..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
+          <SearchBar className="hidden md:flex flex-1 max-w-xl mx-8" />
 
           {/* Actions */}
           <div className="flex items-center gap-3">
@@ -119,16 +111,7 @@ export const Header = () => {
         </div>
 
         {/* Barre de recherche (mobile) */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-        </div>
+        <SearchBar className="md:hidden pb-3" />
       </div>
     </header>
   );
