@@ -1,47 +1,35 @@
 const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Configuration Cloudinary (optionnelle)
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 
-/**
- * Upload une image vers Cloudinary avec compression
- */
-const uploadImage = async (filePath, folder = 'togomarket') => {
-  try {
-    const result = await cloudinary.uploader.upload(filePath, {
-      folder: folder,
-      quality: 'auto:good',
-      fetch_format: 'auto',
-      transformation: [
-        { width: 1200, height: 1200, crop: 'limit' },
-        { quality: 'auto:good' }
-      ]
-    });
-
+const uploadImage = async (imagePath, folder = 'togomarket') => {
+  // Si Cloudinary n'est pas configuré, retourne une URL placeholder
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    console.log('⚠️ Cloudinary non configuré, image ignorée');
     return {
-      url: result.secure_url,
-      publicId: result.public_id
+      url: 'https://via.placeholder.com/400x300?text=Image',
+      publicId: 'placeholder_' + Date.now()
     };
-  } catch (error) {
-    throw new Error(`Erreur upload Cloudinary: ${error.message}`);
   }
+
+  const result = await cloudinary.uploader.upload(imagePath, {
+    folder,
+    transformation: [{ width: 800, height: 600, crop: 'limit' }]
+  });
+  
+  return { url: result.secure_url, publicId: result.public_id };
 };
 
-/**
- * Supprime une image de Cloudinary
- */
 const deleteImage = async (publicId) => {
-  try {
-    await cloudinary.uploader.destroy(publicId);
-  } catch (error) {
-    console.error('Erreur suppression Cloudinary:', error.message);
-  }
+  if (!process.env.CLOUDINARY_CLOUD_NAME) return;
+  await cloudinary.uploader.destroy(publicId);
 };
 
-module.exports = {
-  uploadImage,
-  deleteImage
-};
+module.exports = { uploadImage, deleteImage };

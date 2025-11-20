@@ -126,6 +126,13 @@ const userSchema = new mongoose.Schema({
 
   premiumExpiresAt: Date,
 
+  // Rôle et permissions
+  role: {
+    type: String,
+    enum: ['user', 'staff', 'admin', 'superadmin'],
+    default: 'user'
+  },
+
   // Modération
   isActive: {
     type: Boolean,

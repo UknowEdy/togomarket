@@ -88,6 +88,45 @@ exports.authorize = (...roles) => {
 };
 
 /**
+ * Middleware pour vérifier si l'utilisateur est au moins staff
+ */
+exports.isStaff = (req, res, next) => {
+  if (!['staff', 'admin', 'superadmin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Accès refusé - Rôle Staff requis'
+    });
+  }
+  next();
+};
+
+/**
+ * Middleware pour vérifier si l'utilisateur est au moins admin
+ */
+exports.isAdmin = (req, res, next) => {
+  if (!['admin', 'superadmin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Accès refusé - Rôle Admin requis'
+    });
+  }
+  next();
+};
+
+/**
+ * Middleware pour vérifier si l'utilisateur est superadmin
+ */
+exports.isSuperAdmin = (req, res, next) => {
+  if (req.user.role !== 'superadmin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Accès refusé - Rôle Super Admin requis'
+    });
+  }
+  next();
+};
+
+/**
  * Génère un token JWT
  */
 exports.generateToken = (userId) => {

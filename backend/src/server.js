@@ -67,6 +67,7 @@ app.use('/api/categories', require('./routes/categories'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/favorites', require('./routes/favorites'));
 app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Gestionnaire d'erreurs 404
 app.use(notFound);

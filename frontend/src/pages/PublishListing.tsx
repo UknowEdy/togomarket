@@ -8,6 +8,8 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Card } from '@/components/Card';
 import { compressImage } from '@/utils/helpers';
+import { DynamicFormFields } from '@/components/DynamicFormFields';
+import { shouldHideField } from '@/config/categoryFields';
 
 export const PublishListing = () => {
   const navigate = useNavigate();
@@ -87,8 +89,15 @@ export const PublishListing = () => {
   };
 
   const onSubmit = async (data: CreateListingData) => {
+    console.log('🚀 onSubmit APPELÉ !');
+    console.log('📦 Données form:', data);
+    console.log('🖼️ Images sélectionnées:', selectedImages.length);
+    console.log('❌ Erreurs form:', errors);
+
     if (selectedImages.length === 0) {
+      console.error('❌ Pas d\'image');
       setError('Veuillez ajouter au moins une image');
+      setStep(3); // Retour à l'étape photos
       return;
     }
 
@@ -98,29 +107,45 @@ export const PublishListing = () => {
     try {
       const formData = new FormData();
 
-      // Ajouter les données textuelles
+      // Ajouter les données textuelles de base
       formData.append('title', data.title);
       formData.append('description', data.description);
       formData.append('category', data.category);
       if (data.subcategory) formData.append('subcategory', data.subcategory);
-      formData.append('price', data.price?.toString() || '0');
-      formData.append('isNegotiable', data.isNegotiable ? 'true' : 'false');
+
+      // Prix et négociation (si applicable)
+      if (!shouldHideField(data.category, 'price')) {
+        formData.append('price', data.price?.toString() || '0');
+        formData.append('isNegotiable', data.isNegotiable ? 'true' : 'false');
+      }
       formData.append('isFree', data.isFree ? 'true' : 'false');
-      formData.append('condition', data.condition);
+
+      // État (si applicable)
+      if (!shouldHideField(data.category, 'condition')) {
+        formData.append('condition', data.condition);
+      }
+
+      // Localisation
       formData.append('city', data.city);
       if (data.district) formData.append('district', data.district);
       formData.append('isUrgent', data.isUrgent ? 'true' : 'false');
+
+      // Status pending par défaut (en attente de validation admin)
+      formData.append('status', 'pending');
 
       // Ajouter les images
       selectedImages.forEach((image, index) => {
         formData.append('images', image);
       });
 
+      console.log('📤 Envoi de la requête POST...');
       const response = await listingsAPI.createListing(formData);
+      console.log('✅ Réponse reçue:', response);
 
       // Rediriger vers l'annonce créée
       navigate(`/listing/${response.listing?._id}`);
     } catch (error: any) {
+      console.error('❌ Erreur API:', error);
       setError(error.response?.data?.message || 'Erreur lors de la publication');
     } finally {
       setIsSubmitting(false);
@@ -164,6 +189,13 @@ export const PublishListing = () => {
           <Card>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Informations de l'annonce</h2>
 
+            {/* Message d'erreur global */}
+            {error && (
+              <div className="mb-4 p-3 bg-danger/10 border border-danger text-danger rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-4">
               <Input
                 label="Titre de l'annonce *"
@@ -195,63 +227,80 @@ export const PublishListing = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                      {...register('isFree')}
-                    />
-                    <span className="text-sm font-medium text-gray-700">Article gratuit</span>
-                  </label>
-                </div>
-              </div>
-
-              {!isFree && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Prix (FCFA) *"
-                    type="number"
-                    placeholder="50000"
-                    error={errors.price?.message}
-                    {...register('price', {
-                      required: !isFree && 'Le prix est requis',
-                      min: { value: 0, message: 'Prix invalide' }
-                    })}
-                  />
-
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 cursor-pointer pb-2">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                        {...register('isNegotiable')}
-                      />
-                      <span className="text-sm font-medium text-gray-700">Négociable</span>
-                    </label>
+              {/* Prix et négociation (masqué pour certaines catégories) */}
+              {!shouldHideField(selectedCategory, 'price') && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          {...register('isFree')}
+                        />
+                        <span className="text-sm font-medium text-gray-700">Article gratuit</span>
+                      </label>
+                    </div>
                   </div>
+
+                  {!isFree && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="Prix (FCFA) *"
+                        type="number"
+                        placeholder="50000"
+                        error={errors.price?.message}
+                        {...register('price', {
+                          required: !isFree && 'Le prix est requis',
+                          min: { value: 0, message: 'Prix invalide' }
+                        })}
+                      />
+
+                      {!shouldHideField(selectedCategory, 'isNegotiable') && (
+                        <div className="flex items-end">
+                          <label className="flex items-center gap-2 cursor-pointer pb-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-primary focus:ring-primary"
+                              {...register('isNegotiable')}
+                            />
+                            <span className="text-sm font-medium text-gray-700">Négociable</span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* État (masqué pour certaines catégories) */}
+              {!shouldHideField(selectedCategory, 'condition') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    État *
+                  </label>
+                  <select
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    {...register('condition', { required: "L'état est requis" })}
+                  >
+                    <option value="">Sélectionnez l'état</option>
+                    <option value="new">Neuf</option>
+                    <option value="excellent">Excellent état</option>
+                    <option value="good">Bon état</option>
+                    <option value="acceptable">État acceptable</option>
+                  </select>
+                  {errors.condition && (
+                    <p className="mt-1 text-sm text-danger">{errors.condition.message}</p>
+                  )}
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  État *
-                </label>
-                <select
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  {...register('condition', { required: "L'état est requis" })}
-                >
-                  <option value="">Sélectionnez l'état</option>
-                  <option value="new">Neuf</option>
-                  <option value="excellent">Excellent état</option>
-                  <option value="good">Bon état</option>
-                  <option value="acceptable">État acceptable</option>
-                </select>
-                {errors.condition && (
-                  <p className="mt-1 text-sm text-danger">{errors.condition.message}</p>
-                )}
-              </div>
+              {/* Champs spécifiques à la catégorie */}
+              <DynamicFormFields
+                category={selectedCategory}
+                register={register}
+                errors={errors}
+              />
 
               <div className="flex gap-4">
                 <Button type="button" variant="outline" onClick={() => setStep(1)}>
@@ -343,6 +392,13 @@ export const PublishListing = () => {
           <Card>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Localisation et Options</h2>
 
+            {/* Message d'erreur global */}
+            {error && (
+              <div className="mb-4 p-3 bg-danger/10 border border-danger text-danger rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -394,13 +450,13 @@ export const PublishListing = () => {
                   Précédent
                 </Button>
                 <Button
-                  type="button"
+                  type="submit"
                   variant="primary"
-                  onClick={handleSubmit(onSubmit)}
                   fullWidth
                   isLoading={isSubmitting}
+                  disabled={isSubmitting}
                 >
-                  Publier l'annonce
+                  {isSubmitting ? 'Publication en cours...' : 'Publier l\'annonce'}
                 </Button>
               </div>
             </div>
@@ -446,7 +502,9 @@ export const PublishListing = () => {
         </div>
 
         {/* Formulaire */}
-        <form>{renderStep()}</form>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {renderStep()}
+        </form>
       </div>
     </div>
   );
